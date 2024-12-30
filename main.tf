@@ -16,7 +16,7 @@ resource "aws_customer_gateway" "this" {
   bgp_asn          = try(var.settings.customer_gateway.bgp_asn, null)
   bgp_asn_extended = try(var.settings.customer_gateway.bgp_asn_extended, null)
   ip_address       = var.settings.customer_gateway.ip_address
-  type             = try(var.settings.customer_gateway.type, "ipsec.1")
+  type             = try(var.settings.type, "ipsec.1")
   certificate_arn  = try(var.settings.customer_gateway.certificate_arn, null)
   tags = merge({
     Name = local.cg_name
@@ -43,10 +43,10 @@ resource "aws_vpn_connection" "this" {
   vpn_gateway_id           = length(aws_vpn_gateway.this) > 0 ? aws_vpn_gateway.this[0].id : try(var.settings.vpn_gateway.id, null)
   static_routes_only       = try(var.settings.static_routes_only, null)
   enable_acceleration      = try(var.settings.enable_acceleration, null)
-  local_ipv4_network_cidr  = try(var.settings.local_ipv4_network_cidr, null)
-  local_ipv6_network_cidr  = try(var.settings.local_ipv6_network_cidr, null)
-  remote_ipv4_network_cidr = try(var.settings.remote_ipv4_network_cidr, null)
-  remote_ipv6_network_cidr = try(var.settings.remote_ipv6_network_cidr, null)
+  local_ipv4_network_cidr  = try(var.settings.local.ipv4_network_cidr, null)
+  local_ipv6_network_cidr  = try(var.settings.local.ipv6_network_cidr, null)
+  remote_ipv4_network_cidr = try(var.settings.remote.ipv4_network_cidr, null)
+  remote_ipv6_network_cidr = try(var.settings.remote.ipv6_network_cidr, null)
   outside_ip_address_type  = try(var.settings.outside_ip_address_type, null)
   tunnel_inside_ip_version = try(var.settings.tunnel_inside_ip_version, null)
   # Tunnel 1
