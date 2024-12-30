@@ -12,7 +12,7 @@ locals {
 
 resource "aws_customer_gateway" "this" {
   count            = try(var.settings.customer_gateway.enabled, true) ? 1 : 0
-  device_name      = try(var.settings.customer_gateway.device_name, null)
+  device_name      = try(var.settings.customer_gateway.device_name, local.name)
   bgp_asn          = try(var.settings.customer_gateway.bgp_asn, null)
   bgp_asn_extended = try(var.settings.customer_gateway.bgp_asn_extended, null)
   ip_address       = var.settings.customer_gateway.ip_address
