@@ -8,6 +8,9 @@ locals {
   name       = var.name_prefix == "" ? var.name : "${var.name_prefix}-${local.system_name}-vpn"
   cg_name    = var.name_prefix == "" ? "${var.name}-custgw" : "${var.name_prefix}-${local.system_name}-custgw"
   vpcgw_name = var.name_prefix == "" ? "${var.name}-gw" : "${var.name_prefix}-${local.system_name}-gw"
+  tgw_assoc_name = try(var.settings.transit_gateway_id, "") != "" ? {
+    Name = var.name_prefix == "" ? "${var.name}-tgw-vpn" : "${var.name_prefix}-${local.system_name}-tgw-vpn"
+  } : {}
 }
 
 resource "aws_customer_gateway" "this" {
@@ -131,6 +134,16 @@ resource "aws_cloudwatch_log_group" "tunnel2" {
   tags              = local.all_tags
 }
 
+resource "aws_ec2_tag" "transit_gateway_attachment_name" {
+  depends_on = [aws_vpn_connection.this]
+  for_each = merge({
+    for k, v in local.all_tags : k => v
+    if try(var.settings.transit_gateway_id, "") != ""
+  }, local.tgw_assoc_name)
+  resource_id = aws_vpn_connection.this.transit_gateway_attachment_id
+  key         = each.key
+  value       = each.value
+}
 resource "aws_ec2_tag" "transit_gateway_attachment" {
   depends_on = [aws_vpn_connection.this]
   for_each = {
