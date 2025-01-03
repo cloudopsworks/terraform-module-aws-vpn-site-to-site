@@ -134,7 +134,7 @@ resource "aws_cloudwatch_log_group" "tunnel2" {
   tags              = local.all_tags
 }
 
-resource "aws_ec2_tag" "transit_gateway_attachment_name" {
+resource "aws_ec2_tag" "this_tgw" {
   depends_on = [aws_vpn_connection.this]
   for_each = merge({
     for k, v in local.all_tags : k => v
