@@ -144,13 +144,18 @@ resource "aws_ec2_tag" "transit_gateway_attachment_name" {
   key         = each.key
   value       = each.value
 }
-resource "aws_ec2_tag" "transit_gateway_attachment" {
-  depends_on = [aws_vpn_connection.this]
-  for_each = {
-    for k, v in local.all_tags : k => v
-    if try(var.settings.transit_gateway_id, "") != ""
-  }
-  resource_id = aws_vpn_connection.this.transit_gateway_attachment_id
-  key         = each.key
-  value       = each.value
+
+module "tgw_routes" {
+  count                          = try(var.settings.transit_gateway_id, "") != "" ? 1 : 0
+  source                         = "github.com/cloudopsworks/terraform-module-aws-transit-gateway-routes.git//?ref=master"
+  org                            = var.org
+  spoke_def                      = var.spoke_def
+  vpc_route_table_ids            = try(var.vpc.route_table_ids, [])
+  tgw_destination_cidr           = try(var.settings.transit_gateway.tgw_destination_cidr, null)
+  transit_gateway_id             = var.settings.transit_gateway_id
+  create_association             = try(var.settings.transit_gateway.create_association, true)
+  transit_gateway_attachment_id  = aws_vpn_connection.this.transit_gateway_attachment_id
+  transit_gateway_route_table_id = var.settings.transit_gateway.route_table_id
+  transit_gateway_routes         = var.settings.transit_gateway.routes
+  extra_tags                     = var.extra_tags
 }
