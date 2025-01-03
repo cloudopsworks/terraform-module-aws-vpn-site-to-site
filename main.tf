@@ -130,3 +130,14 @@ resource "aws_cloudwatch_log_group" "tunnel2" {
   retention_in_days = try(var.settings.tunnel2.log.retention_in_days, 30)
   tags              = local.all_tags
 }
+
+resource "aws_ec2_tag" "transit_gateway_attachment" {
+  depends_on = [aws_vpn_connection.this]
+  for_each = {
+    for k, v in local.all_tags : k => v
+    if try(var.settings.transit_gateway_id, "") != ""
+  }
+  resource_id = aws_vpn_connection.this.transit_gateway_attachment_id
+  key         = each.key
+  value       = each.value
+}

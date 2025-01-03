@@ -24,6 +24,10 @@ output "vpn_connection_transit_gateway_id" {
   value = aws_vpn_connection.this.transit_gateway_id
 }
 
+output "vpn_connection_transit_gateway_attachment_id" {
+  value = aws_vpn_connection.this.transit_gateway_attachment_id
+}
+
 output "vpn_connection_tunnel1_address" {
   value = aws_vpn_connection.this.tunnel1_address
 }
