@@ -159,3 +159,9 @@ module "tgw_routes" {
   transit_gateway_routes         = var.settings.transit_gateway.routes
   extra_tags                     = var.extra_tags
 }
+
+resource "aws_vpn_connection_route" "this" {
+  count                  = length(try(var.settings.routes, []))
+  destination_cidr_block = var.settings.routes[count.index].destination_cidr_block
+  vpn_connection_id      = aws_vpn_connection.this.id
+}
