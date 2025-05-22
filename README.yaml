@@ -1,4 +1,4 @@
-name: Terraform Transit Gateway Module
+name: Terraform AWS VPN Site-to-Site Module
 #logo: logo/logo.jpg
 
 license: "APACHE2"
@@ -8,23 +8,103 @@ copyrights:
     url: "https://cloudops.works"
     year: "2024"
 
-github_repo: cloudopsworks/terraform-module-aws-vpc-setup
+github_repo: cloudopsworks/terraform-module-aws-vpn-site-to-site
 
 description: |-
-  VPC Module for setting up transit gateway with ResourceAccessMananger support.
+  AWS VPN Site-to-Site Module for establishing secure VPN connections between on-premises networks and AWS VPCs. This module supports both VPN Gateway and Transit Gateway configurations, offering flexible routing options, tunnel redundancy, and automated VPN connection management with comprehensive monitoring capabilities.
 
 # Introduction to the project
-#introduction: |-
-#  This is an introduction.
+introduction: |-
+  The AWS VPN Site-to-Site Terraform module simplifies the process of creating and managing secure VPN connections between your on-premises network and AWS infrastructure. It provides a robust solution for establishing encrypted tunnels, supporting both static and dynamic routing protocols, and ensures high availability through redundant VPN tunnels. The module is designed to work seamlessly with AWS Transit Gateway and VPN Gateway, making it ideal for both simple and complex network architectures.
 
 # How to use this project
-#usage: |-
+usage: |-
+  To use this module with Terragrunt, create a terragrunt.hcl file with the following configuration:
+
+  ```hcl
+  include "root" {
+    path = find_in_parent_folders()
+  }
+
+  terraform {
+    source = "git::https://github.com/cloudopsworks/terraform-module-aws-vpn-site-to-site.git?ref=v1.0.0"
+  }
+
+  inputs = {
+    customer_gateway_ip    = "1.2.3.4"
+    vpn_connection_type   = "ipsec.1"
+    static_routes_only    = false
+    transit_gateway_id    = "tgw-xxxxx"
+    tags = {
+      Environment = "production"
+      Project     = "network"
+    }
+  }
+  ```
 
 # Example usage
-#examples: |-
+examples: |-
+  ### Basic VPN Connection with Transit Gateway
+  ```hcl
+  include "root" {
+    path = find_in_parent_folders()
+  }
+
+  terraform {
+    source = "git::https://github.com/cloudopsworks/terraform-module-aws-vpn-site-to-site.git?ref=v1.0.0"
+  }
+
+  inputs = {
+    customer_gateway_ip   = "203.0.113.1"
+    vpn_connection_type  = "ipsec.1"
+    transit_gateway_id   = dependency.transit_gateway.outputs.transit_gateway_id
+    static_routes_only   = true
+    static_routes        = ["192.168.0.0/24"]
+    tags = {
+      Environment = "production"
+    }
+  }
+  ```
 
 # How to get started quickly
-#quickstart: |-
+quickstart: |-
+  1. Ensure you have the following prerequisites:
+     - AWS credentials configured
+     - Terraform (>= 0.13)
+     - Terragrunt installed
+
+  2. Create a new Terragrunt project directory:
+     ```bash
+     mkdir vpn-project
+     cd vpn-project
+     ```
+
+  3. Create a terragrunt.hcl file with the module configuration:
+     ```hcl
+     include "root" {
+       path = find_in_parent_folders()
+     }
+
+     terraform {
+       source = "git::https://github.com/cloudopsworks/terraform-module-aws-vpn-site-to-site.git?ref=v1.0.0"
+     }
+
+     inputs = {
+       customer_gateway_ip = "YOUR_ON_PREMISES_IP"
+       vpn_connection_type = "ipsec.1"
+       static_routes_only  = true
+       static_routes       = ["10.0.0.0/16"]
+     }
+     ```
+
+  4. Initialize and apply the configuration:
+     ```bash
+     terragrunt init
+     terragrunt plan
+     terragrunt apply
+     ```
+
+  5. After successful application, retrieve the VPN configuration for your on-premises device using the output values.
 
 include:
   - "docs/targets.md"
