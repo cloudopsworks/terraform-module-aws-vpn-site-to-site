@@ -147,7 +147,7 @@ resource "aws_ec2_tag" "this_tgw" {
 
 module "tgw_routes" {
   count                          = try(var.settings.transit_gateway_id, "") != "" ? 1 : 0
-  source                         = "github.com/cloudopsworks/terraform-module-aws-transit-gateway-routes.git//?ref=master"
+  source                         = "git::https://github.com/cloudopsworks/terraform-module-aws-transit-gateway-routes.git//?ref=v1.0.2"
   org                            = var.org
   spoke_def                      = var.spoke_def
   vpc_route_table_ids            = try(var.vpc.route_table_ids, [])
