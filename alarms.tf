@@ -25,6 +25,8 @@ resource "aws_cloudwatch_metric_alarm" "tunnel1_status" {
   ])
   metric_name = "TunnelState"
   namespace   = "AWS/VPN"
+  statistic   = "Maximum"
+  period      = 300
   dimensions = {
     VpnId           = aws_vpn_connection.this.id
     TunnelIpAddress = aws_vpn_connection.this.tunnel1_address
@@ -50,6 +52,8 @@ resource "aws_cloudwatch_metric_alarm" "tunnel2_status" {
   ])
   metric_name = "TunnelState"
   namespace   = "AWS/VPN"
+  statistic   = "Maximum"
+  period      = 300
   dimensions = {
     VpnId           = aws_vpn_connection.this.id
     TunnelIpAddress = aws_vpn_connection.this.tunnel2_address
