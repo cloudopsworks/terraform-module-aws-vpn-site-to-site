@@ -16,7 +16,7 @@ resource "aws_cloudwatch_metric_alarm" "vpn_status" {
   evaluation_periods  = "1"
   threshold           = try(var.settings.alarms.threshold, "1")
   datapoints_to_alarm = "1"
-  alarm_description   = "${local.name} VPN Status - Address: ${aws_vpn_connection.this.tunnel1_address} - Alarm if the VPN connection is not healthy"
+  alarm_description   = "VPN Status for ${local.name} - Address: ${aws_vpn_connection.this.tunnel1_address} - Alarm if the VPN connection is not healthy"
   alarm_actions = flatten([
     try(data.aws_sns_topic.vpn_status.*.arn, var.settings.alarms.sns_topic_arns, [])
   ])
@@ -42,7 +42,7 @@ resource "aws_cloudwatch_metric_alarm" "tunnel1_status" {
   evaluation_periods  = "1"
   threshold           = try(var.settings.alarms.threshold, "1")
   datapoints_to_alarm = "1"
-  alarm_description   = "${local.name} VPN Status - Address: ${aws_vpn_connection.this.tunnel1_address} - Alarm if the VPN connection is not healthy"
+  alarm_description   = "VPN Status for ${local.name} - Address: ${aws_vpn_connection.this.tunnel1_address} - Alarm if the VPN connection is not healthy"
   alarm_actions = flatten([
     try(data.aws_sns_topic.vpn_status.*.arn, var.settings.alarms.sns_topic_arns, [])
   ])
@@ -69,7 +69,7 @@ resource "aws_cloudwatch_metric_alarm" "tunnel2_status" {
   evaluation_periods  = "1"
   threshold           = try(var.settings.alarms.threshold, "1")
   datapoints_to_alarm = "1"
-  alarm_description   = "${local.name} VPN Status - Address: ${aws_vpn_connection.this.tunnel2_address} - Alarm if the VPN connection is not healthy"
+  alarm_description   = "VPN Status for ${local.name} - Address: ${aws_vpn_connection.this.tunnel2_address} - Alarm if the VPN connection is not healthy"
   alarm_actions = flatten([
     try(data.aws_sns_topic.vpn_status.*.arn, var.settings.alarms.sns_topic_arns, [])
   ])
