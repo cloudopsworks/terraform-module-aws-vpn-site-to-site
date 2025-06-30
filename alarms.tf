@@ -5,8 +5,8 @@
 #
 
 data "aws_sns_topic" "vpn_status" {
-  count = try(var.settings.alarms.sns_topic, "") != "" && try(var.settings.alarms.enabled, false) ? 1 : 0
-  name  = var.settings.alarms.sns_topic
+  count = length(try(var.settings.alarms.sns_topics, [])) > 0 && try(var.settings.alarms.enabled, false) ? 1 : 0
+  name  = var.settings.alarms.sns_topics[count.index]
 }
 
 resource "aws_cloudwatch_metric_alarm" "tunnel1_status" {
@@ -14,14 +14,14 @@ resource "aws_cloudwatch_metric_alarm" "tunnel1_status" {
   alarm_name          = "${local.name} Tunnel 1 VPN Status"
   comparison_operator = "LessThanToThreshold"
   evaluation_periods  = "1"
-  threshold           = "0.5"
+  threshold           = try(var.settings.alarms.threshold, "1")
   datapoints_to_alarm = "1"
   alarm_description   = "${local.name} VPN Status - Address: ${aws_vpn_connection.this.tunnel1_address} - Alarm if the VPN connection is not healthy"
   alarm_actions = flatten([
-    try([data.aws_sns_topic.vpn_status[0].arn], [var.settings.alarms.sns_topic_arn], [])
+    try(data.aws_sns_topic.vpn_status.*.arn, var.settings.alarms.sns_topic_arns, [])
   ])
   ok_actions = flatten([
-    try([data.aws_sns_topic.vpn_status[0].arn], [var.settings.alarms.sns_topic_arn], [])
+    try(data.aws_sns_topic.vpn_status.*.arn, var.settings.alarms.sns_topic_arns, [])
   ])
   metric_name = "TunnelState"
   namespace   = "AWS/VPN"
@@ -39,14 +39,14 @@ resource "aws_cloudwatch_metric_alarm" "tunnel2_status" {
   alarm_name          = "${local.name} Tunnel 2 VPN Status"
   comparison_operator = "LessThanToThreshold"
   evaluation_periods  = "1"
-  threshold           = "0.5"
+  threshold           = try(var.settings.alarms.threshold, "1")
   datapoints_to_alarm = "1"
   alarm_description   = "${local.name} VPN Status - Address: ${aws_vpn_connection.this.tunnel2_address} - Alarm if the VPN connection is not healthy"
   alarm_actions = flatten([
-    try([data.aws_sns_topic.vpn_status[0].arn], [var.settings.alarms.sns_topic_arn], [])
+    try(data.aws_sns_topic.vpn_status.*.arn, var.settings.alarms.sns_topic_arns, [])
   ])
   ok_actions = flatten([
-    try([data.aws_sns_topic.vpn_status[0].arn], [var.settings.alarms.sns_topic_arn], [])
+    try(data.aws_sns_topic.vpn_status.*.arn, var.settings.alarms.sns_topic_arns, [])
   ])
   metric_name = "TunnelState"
   namespace   = "AWS/VPN"
