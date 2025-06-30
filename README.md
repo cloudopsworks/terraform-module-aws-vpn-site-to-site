@@ -79,7 +79,108 @@ inputs = {
     Environment = "production"
     Project     = "network"
   }
+  settings = {
+    alarms = {
+      enabled = true              # Enable/disable CloudWatch alarms
+      for_each_tunnel = false     # If true, creates separate alarms for each tunnel
+      threshold = "1"             # Threshold value for the alarm (default: 1)
+      sns_topics = ["topic-name"] # List of SNS topic names to notify
+      sns_topic_arns = []        # List of SNS topic ARNs (alternative to sns_topics)
+    }
+  }
 }
+```
+
+"settings" Variable details:
+```
+settings:
+  alarms:
+    enabled: true | false         # (optional) if true, creates alarms for the VPN
+    for_each_tunnel: true | false # (optional) if true, creates alarms for each tunnel, default is false
+    sns_topics:                   # (optional) list of SNS topics to send alarms to
+      - topic1
+      - topic2
+    sns_topic_arns:               # (optional) list of SNS topic ARNs to send alarms to (if sns_topics is not used)
+      - "arn:aws:sns:us-east-1:123456789012:topic1"
+    threshold: 1 # (optional) threshold for the alarm, default is 1
+  customer_gateway:
+    enabled: true
+    id: "cgw-12345678" # only required if you are using an existing customer gateway & enabled=false
+    device_name: "device-name"
+    bgp_asn: 65000
+    bgp_asn_extended: 65000
+    ip_address: "127.0.0.1"
+    certificate_arn: "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012"
+  vpn_gateway:
+    enabled: true
+    id: "vgw-12345678" # only required if you are using an existing VPN gateway & enabled=false
+    availability_zone: "us-east-1a"
+  type: "ipsec.1"
+  transit_gateway_id: "tgw-12345678"
+  static_routes_only: true
+  enable_acceleration: true
+  local:
+    ipv4_network_cidr: "x.x.x.x/x"
+    ipv6_network_cidr: "xxxx:xxxx:xxxx::/x"
+  remote:
+    ipv4_network_cidr: "x.x.x.x/x"
+    ipv6_network_cidr: "xxxx:xxxx:xxxx::/x"
+  outside_ip_address_type: PublicIpv4 | PrivateIpv4
+  tunnel_inside_ip_version: ipv4 | ipv6
+  tunnel1:
+    inside_cidr: "x.x.x.x/x"
+    inside_ipv6_cidr: "xxxx:xxxx:xxxx::/x"
+    preshared_key: "preshared-key"
+    dpd_timeout_action: clear | none | restart
+    dpd_timeout_seconds: 30
+    enable_tunnel_lifecycle_control: true
+    ike_versions: ["ikev1", "ikev2"]
+    rekey_margin_time_seconds: 300
+    rekey_fuzz_percentage: 100
+    replay_window_size: 1024
+    startup_action: start | add
+    phase1:
+      dh_group_numbers: [2, 14, 15]
+      encryption_algorithms: ["aes128", "aes256"]
+      integrity_algorithms: ["sha1", "sha256"]
+      lifetime_seconds: 28800
+    phase2:
+      dh_group_numbers: [2, 14, 15]
+      encryption_algorithms: ["aes128", "aes256"]
+      integrity_algorithms: ["sha1", "sha256"]
+      lifetime_seconds: 3600
+    log:
+      enabled: true
+      cloudwatch_log_group_name: "vpn-logs" # Optional if not specified it creates new log group
+      output_format: "json"
+      retention_in_days: 30
+  tunnel2:
+    inside_cidr: "x.x.x.x/x"
+    inside_ipv6_cidr: "xxxx:xxxx:xxxx::/x"
+    preshared_key: "preshared-key"
+    dpd_timeout_action: clear | none | restart
+    dpd_timeout_seconds: 30
+    enable_tunnel_lifecycle_control: true
+    ike_versions: ["ikev1", "ikev2"]
+    rekey_margin_time_seconds: 300
+    rekey_fuzz_percentage: 100
+    replay_window_size: 1024
+    startup_action: start | add
+    phase1:
+      dh_group_numbers: [2, 14, 15]
+      encryption_algorithms: ["aes128", "aes256"]
+      integrity_algorithms: ["sha1", "sha256"]
+      lifetime_seconds: 28800
+    phase2:
+      dh_group_numbers: [2, 14, 15]
+      encryption_algorithms: ["aes128", "aes256"]
+      integrity_algorithms: ["sha1", "sha256"]
+      lifetime_seconds: 3600
+    log:
+      enabled: true
+      cloudwatch_log_group_name: "vpn-logs" # Optional if not specified it creates new log group
+      output_format: "json"
+      retention_in_days: 30
 ```
 
 ## Quick Start
@@ -165,6 +266,7 @@ Available targets:
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 5.0 |
 
 ## Providers
 
@@ -185,12 +287,16 @@ Available targets:
 |------|------|
 | [aws_cloudwatch_log_group.tunnel1](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
 | [aws_cloudwatch_log_group.tunnel2](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
+| [aws_cloudwatch_metric_alarm.tunnel1_status](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
+| [aws_cloudwatch_metric_alarm.tunnel2_status](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
+| [aws_cloudwatch_metric_alarm.vpn_status](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
 | [aws_customer_gateway.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/customer_gateway) | resource |
 | [aws_ec2_tag.this_tgw](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_tag) | resource |
 | [aws_vpn_connection.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpn_connection) | resource |
 | [aws_vpn_connection_route.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpn_connection_route) | resource |
 | [aws_vpn_gateway.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpn_gateway) | resource |
 | [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
+| [aws_sns_topic.vpn_status](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/sns_topic) | data source |
 
 ## Inputs
 

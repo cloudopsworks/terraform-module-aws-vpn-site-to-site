@@ -10,7 +10,7 @@ data "aws_sns_topic" "vpn_status" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "vpn_status" {
-  count               = try(var.settings.alarms.enabled, false) && try(var.settings.alarms.for_each_tunnel, false) ? 1 : 0
+  count               = try(var.settings.alarms.enabled, false) && !try(var.settings.alarms.for_each_tunnel, false) ? 1 : 0
   alarm_name          = "VPN Status - ${local.name}"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = "1"
@@ -36,7 +36,7 @@ resource "aws_cloudwatch_metric_alarm" "vpn_status" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "tunnel1_status" {
-  count               = try(var.settings.alarms.enabled, false) && !try(var.settings.alarms.for_each_tunnel, false) ? 1 : 0
+  count               = try(var.settings.alarms.enabled, false) && try(var.settings.alarms.for_each_tunnel, false) ? 1 : 0
   alarm_name          = "VPN Status - ${local.name} Tunnel 1"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = "1"
