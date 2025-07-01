@@ -24,6 +24,15 @@ variable "vpc" {
 
 ## VPN Settings in YAML format
 # settings:
+#   alarms:
+#     enabled: true | false         # (optional) if true, creates alarms for the VPN
+#     for_each_tunnel: true | false # (optional) if true, creates alarms for each tunnel, default is false
+#     sns_topics:                   # (optional) list of SNS topics to send alarms to
+#       - topic1
+#       - topic2
+#     sns_topic_arns:               # (optional) list of SNS topic ARNs to send alarms to (if sns_topics is not used)
+#       - "arn:aws:sns:us-east-1:123456789012:topic1"
+#     threshold: 1 # (optional) threshold for the alarm, default is 1
 #   customer_gateway:
 #     enabled: true
 #     id: "cgw-12345678" # only required if you are using an existing customer gateway & enabled=false
