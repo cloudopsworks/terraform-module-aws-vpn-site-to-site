@@ -29,7 +29,7 @@ resource "aws_customer_gateway" "this" {
 }
 
 resource "aws_vpn_gateway" "this" {
-  count             = try(var.settings.vpn_gateway.enabled, true) && try(var.vpc.vpc_id, "") != "" ? 1 : 0
+  count             = try(var.settings.vpn_gateway.enabled, false) && try(var.vpc.vpc_id, "") != "" ? 1 : 0
   availability_zone = try(var.settings.vpn_gateway.availability_zone, null)
   amazon_side_asn   = try(var.settings.vpn_gateway.amazon_side_asn, null)
   tags = merge({
@@ -40,15 +40,15 @@ resource "aws_vpn_gateway" "this" {
 }
 
 resource "aws_vpn_gateway_attachment" "this" {
-  count          = try(var.settings.vpn_gateway.enabled, true) && try(var.vpc.vpc_id, "") != "" ? 1 : 0
+  count          = try(var.settings.vpn_gateway.enabled, false) && try(var.vpc.vpc_id, "") != "" ? 1 : 0
   vpc_id         = var.vpc.vpc_id
   vpn_gateway_id = aws_vpn_gateway.this[0].id
 }
 
 resource "aws_vpn_gateway_route_propagation" "this" {
-  count          = try(var.settings.vpn_gateway.enabled, true) && try(var.settings.vpn_gateway.propagation.enabled, false) ? 1 : 0
+  count          = try(var.settings.vpn_gateway.propagation.enabled, false) ? 1 : 0
   route_table_id = var.vpc.route_table_ids[0]
-  vpn_gateway_id = aws_vpn_gateway.this[0].id
+  vpn_gateway_id = length(aws_vpn_gateway.this) > 0 ? aws_vpn_gateway.this[0].id : try(var.settings.vpn_gateway.id, null)
 }
 
 resource "aws_vpn_connection" "this" {
