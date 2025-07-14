@@ -137,6 +137,9 @@ resource "aws_cloudwatch_log_group" "tunnel1" {
   name              = "/aws/vpn/${local.name}-tunnel1"
   retention_in_days = try(var.settings.tunnel1.log.retention_in_days, 30)
   tags              = local.all_tags
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_cloudwatch_log_group" "tunnel2" {
@@ -144,6 +147,9 @@ resource "aws_cloudwatch_log_group" "tunnel2" {
   name              = "/aws/vpn/${local.name}-tunnel2"
   retention_in_days = try(var.settings.tunnel2.log.retention_in_days, 30)
   tags              = local.all_tags
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_ec2_tag" "this_tgw" {
