@@ -5,7 +5,7 @@
 #
 
 data "aws_sns_topic" "vpn_status" {
-  count = length(try(var.settings.alarms.sns_topics, [])) > 0 && try(var.settings.alarms.enabled, false) ? 1 : 0
+  count = length(try(var.settings.alarms.sns_topics, [])) > 0 && try(var.settings.alarms.enabled, false) ? length(try(var.settings.alarms.sns_topics, [])) : 0
   name  = var.settings.alarms.sns_topics[count.index]
 }
 
