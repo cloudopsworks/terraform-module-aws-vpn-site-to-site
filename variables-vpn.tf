@@ -26,6 +26,7 @@ variable "vpc" {
 # settings:
 #   alarms:
 #     enabled: true | false         # (optional) if true, creates alarms for the VPN
+#     priority: 2                   # (optional) priority of the alarm, default is 2
 #     for_each_tunnel: true | false # (optional) if true, creates alarms for each tunnel, default is false
 #     sns_topics:                   # (optional) list of SNS topics to send alarms to
 #       - topic1
