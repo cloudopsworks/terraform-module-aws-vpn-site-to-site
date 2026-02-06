@@ -15,7 +15,7 @@
 
 
 
-AWS VPN Site-to-Site Module for establishing secure VPN connections between on-premises networks and AWS VPCs. This module supports both VPN Gateway and Transit Gateway configurations, offering flexible routing options, tunnel redundancy, and automated VPN connection management with comprehensive monitoring capabilities.
+Enterprise-grade AWS VPN Site-to-Site module for establishing high-availability encrypted connections. Supports both Transit Gateway (TGW) and Virtual Private Gateway (VGW) attachments, provides automated CloudWatch logging, comprehensive monitoring with health alarms, and flexible routing options including BGP and static routes.
 
 
 ---
@@ -50,7 +50,7 @@ We have [*lots of terraform modules*][terraform_modules] that are Open Source an
 
 ## Introduction
 
-The AWS VPN Site-to-Site Terraform module simplifies the process of creating and managing secure VPN connections between your on-premises network and AWS infrastructure. It provides a robust solution for establishing encrypted tunnels, supporting both static and dynamic routing protocols, and ensures high availability through redundant VPN tunnels. The module is designed to work seamlessly with AWS Transit Gateway and VPN Gateway, making it ideal for both simple and complex network architectures.
+The AWS VPN Site-to-Site module simplifies the deployment of secure tunnels between on-premises networks and AWS. Designed with flexibility in mind, it allows for granular control over tunnel specifications such as IKE versions, encryption protocols, and DPD actions. It integrates seamlessly with AWS's networking ecosystem, offering native support for route propagation and centralized TGW management, ensuring your hybrid cloud connectivity is both robust and observable.
 
 ## Usage
 
@@ -59,192 +59,193 @@ The AWS VPN Site-to-Site Terraform module simplifies the process of creating and
 Instead pin to the release tag (e.g. `?ref=vX.Y.Z`) of one of our [latest releases](https://github.com/cloudopsworks/terraform-module-aws-vpn-site-to-site/releases).
 
 
-To use this module with Terragrunt, create a terragrunt.hcl file with the following configuration:
+Deploying the VPN module is best achieved using Terragrunt, which facilitates clear configuration and multi-environment management.
+
+### Module Variables Structure
+
+The following variables define the module's behavior. They should be placed within the `inputs` block of your `terragrunt.hcl`.
+
+- `org`: (Required) **object** - Organizational metadata used for standard naming and tagging conventions.
+  - `organization_name`: (Required) Name of the organization.
+  - `organization_unit`: (Required) Department or business unit.
+  - `environment_type`: (Required) Type of environment (e.g., prod, non-prod).
+  - `environment_name`: (Required) Specific name of the environment.
+- `name`: (Optional) **string** - The primary name for the VPN connection. Defaults to "".
+- `name_prefix`: (Optional) **string** - A prefix applied to all generated resource names.
+- `is_hub`: (Optional) **bool** - Set to `true` if this VPN is part of a HUB architecture. Defaults to `false`.
+- `spoke_def`: (Optional) **string** - Identifier for the spoke if applicable. Defaults to "001".
+- `extra_tags`: (Optional) **map(string)** - Additional tags to be merged with the standard organizational tags.
+- `vpc`: (Optional) **any** - Configuration for the VPC where the VPN or VGW resides.
+  - `vpc_id`: (Required if vpc provided) The AWS ID of the target VPC.
+  - `route_table_ids`: (Optional) List of Route Table IDs for enabling route propagation.
+- `settings`: (Optional) **any** - The central configuration object for the VPN tunnels, gateways, and monitoring.
+
+### Complete Configuration (YAML Format)
+
+The following YAML represents the full capability of the module. You can use this as a reference to build your Terragrunt `inputs`:
+
+```yaml
+# Top-level variables
+org:
+  organization_name: "cloudopsworks" # (Required)
+  organization_unit: "platform"      # (Required)
+  environment_type: "prod"           # (Required)
+  environment_name: "us-east-1"      # (Required)
+
+name: "corp-connect"                 # (Optional)
+name_prefix: "primary"               # (Optional)
+is_hub: false                        # (Optional)
+spoke_def: "001"                     # (Optional)
+extra_tags:                          # (Optional)
+  Team: "Network"
+
+vpc:                                 # (Optional) Required for VGW
+  vpc_id: "vpc-0a1b2c3d4e5f"         # (Required)
+  route_table_ids: ["rtb-112233"]    # (Optional)
+
+# Deep settings
+settings:
+  type: "ipsec.1"                    # (Optional) default: ipsec.1
+  transit_gateway_id: "tgw-xyz..."   # (Optional) Attachment for TGW
+  static_routes_only: true           # (Optional)
+  enable_acceleration: false         # (Optional)
+  outside_ip_address_type: PublicIpv4 # (Optional) PublicIpv4 | PrivateIpv4
+  tunnel_inside_ip_version: ipv4     # (Optional) ipv4 | ipv6
+
+  alarms:
+    enabled: true                    # (Optional) Enable health alarms
+    priority: 1                      # (Optional) 1=P1, 2=P2
+    for_each_tunnel: true            # (Optional) Separate alarm per tunnel
+    sns_topics: ["notifications"]    # (Optional)
+    sns_topic_arns: []               # (Optional)
+    threshold: 1                     # (Optional) default: 1
+
+  customer_gateway:
+    enabled: true                    # (Optional)
+    ip_address: "203.0.113.1"        # (Required)
+    bgp_asn: 65000                   # (Optional)
+    device_name: "onprem-router"     # (Optional)
+    certificate_arn: null            # (Optional)
+    id: "cgw-existing"               # (Optional) if enabled: false
+
+  vpn_gateway:
+    enabled: false                   # (Optional)
+    id: "vgw-existing"               # (Optional) if enabled: false
+    amazon_side_asn: 64512           # (Optional)
+    propagation:
+      enabled: true                  # (Optional) Enable VGW propagation
+
+  local:
+    ipv4_network_cidr: "10.0.0.0/16" # (Optional)
+  remote:
+    ipv4_network_cidr: "172.16.0.0/12" # (Optional)
+
+  routes:                            # (Optional) Static routes list
+    - destination_cidr_block: "192.168.0.0/24"
+
+  tunnel1:                           # (Optional) Advanced Tunnel 1
+    inside_cidr: "169.254.10.0/30"
+    preshared_key: "strongkey123"
+    dpd_timeout_action: restart      # (Optional) clear | none | restart
+    ike_versions: ["ikev2"]          # (Optional)
+    log:
+      enabled: true
+      retention_in_days: 14
+    phase1:
+      encryption_algorithms: ["aes256"]
+      integrity_algorithms: ["sha256"]
+      dh_group_numbers: [14]
+    phase2:
+      encryption_algorithms: ["aes256"]
+      integrity_algorithms: ["sha256"]
+      dh_group_numbers: [14]
+  
+  tunnel2:                           # (Optional) Advanced Tunnel 2
+    # ... same as tunnel1
+```
+
+## Quick Start
+
+1. **Identify Connection Parameters**: Obtain your on-premises public IP address and decided on BGP vs Static routing.
+2. **Set up Terragrunt**: Create a `terragrunt.hcl` in your desired environment folder.
+3. **Provide Inputs**: Fill in the `org` object and `settings.customer_gateway.ip_address`.
+4. **Deploy**: Run the following commands:
+   ```bash
+   terragrunt init
+   terragrunt apply
+   ```
+5. **Verify Connection**: Once applied, check the AWS Console under VPC > Site-to-Site VPN Connections to verify the tunnel status and download the configuration for your on-premises device.
+
+
+## Examples
+
+### Terragrunt: VPN with Transit Gateway and Alarms
 
 ```hcl
-include "root" {
-  path = find_in_parent_folders()
-}
-
 terraform {
   source = "git::https://github.com/cloudopsworks/terraform-module-aws-vpn-site-to-site.git?ref=v1.0.0"
 }
 
+include "root" {
+  path = find_in_parent_folders()
+}
+
 inputs = {
-  customer_gateway_ip    = "1.2.3.4"
-  vpn_connection_type   = "ipsec.1"
-  static_routes_only    = false
-  transit_gateway_id    = "tgw-xxxxx"
-  tags = {
-    Environment = "production"
-    Project     = "network"
+  org = {
+    organization_name = "acme"
+    organization_unit = "it"
+    environment_type  = "prod"
+    environment_name  = "global"
   }
+  
+  name = "main-office"
+  
   settings = {
+    transit_gateway_id = "tgw-0aabbcc112233"
+    customer_gateway = {
+      ip_address = "1.2.3.4"
+      bgp_asn    = 65100
+    }
     alarms = {
-      enabled = true              # Enable/disable CloudWatch alarms
-      for_each_tunnel = false     # If true, creates separate alarms for each tunnel
-      threshold = "1"             # Threshold value for the alarm (default: 1)
-      sns_topics = ["topic-name"] # List of SNS topic names to notify
-      sns_topic_arns = []        # List of SNS topic ARNs (alternative to sns_topics)
+      enabled    = true
+      sns_topics = ["infrastructure-alerts"]
     }
   }
 }
 ```
 
-"settings" Variable details:
-```
-settings:
-  alarms:
-    enabled: true | false         # (optional) if true, creates alarms for the VPN
-    priority: 2                   # (optional) priority of the alarm, default is 2
-    for_each_tunnel: true | false # (optional) if true, creates alarms for each tunnel, default is false
-    sns_topics:                   # (optional) list of SNS topics to send alarms to
-      - topic1
-      - topic2
-    sns_topic_arns:               # (optional) list of SNS topic ARNs to send alarms to (if sns_topics is not used)
-      - "arn:aws:sns:us-east-1:123456789012:topic1"
-    threshold: 1 # (optional) threshold for the alarm, default is 1
-  customer_gateway:
-    enabled: true
-    id: "cgw-12345678" # only required if you are using an existing customer gateway & enabled=false
-    device_name: "device-name"
-    bgp_asn: 65000
-    bgp_asn_extended: 65000
-    ip_address: "127.0.0.1"
-    certificate_arn: "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012"
-  vpn_gateway:
-    enabled: true
-    id: "vgw-12345678" # only required if you are using an existing VPN gateway & enabled=false
-    availability_zone: "us-east-1a"
-  type: "ipsec.1"
-  transit_gateway_id: "tgw-12345678"
-  static_routes_only: true
-  enable_acceleration: true
-  local:
-    ipv4_network_cidr: "x.x.x.x/x"
-    ipv6_network_cidr: "xxxx:xxxx:xxxx::/x"
-  remote:
-    ipv4_network_cidr: "x.x.x.x/x"
-    ipv6_network_cidr: "xxxx:xxxx:xxxx::/x"
-  outside_ip_address_type: PublicIpv4 | PrivateIpv4
-  tunnel_inside_ip_version: ipv4 | ipv6
-  tunnel1:
-    inside_cidr: "x.x.x.x/x"
-    inside_ipv6_cidr: "xxxx:xxxx:xxxx::/x"
-    preshared_key: "preshared-key"
-    dpd_timeout_action: clear | none | restart
-    dpd_timeout_seconds: 30
-    enable_tunnel_lifecycle_control: true
-    ike_versions: ["ikev1", "ikev2"]
-    rekey_margin_time_seconds: 300
-    rekey_fuzz_percentage: 100
-    replay_window_size: 1024
-    startup_action: start | add
-    phase1:
-      dh_group_numbers: [2, 14, 15]
-      encryption_algorithms: ["aes128", "aes256"]
-      integrity_algorithms: ["sha1", "sha256"]
-      lifetime_seconds: 28800
-    phase2:
-      dh_group_numbers: [2, 14, 15]
-      encryption_algorithms: ["aes128", "aes256"]
-      integrity_algorithms: ["sha1", "sha256"]
-      lifetime_seconds: 3600
-    log:
-      enabled: true
-      cloudwatch_log_group_name: "vpn-logs" # Optional if not specified it creates new log group
-      output_format: "json"
-      retention_in_days: 30
-  tunnel2:
-    inside_cidr: "x.x.x.x/x"
-    inside_ipv6_cidr: "xxxx:xxxx:xxxx::/x"
-    preshared_key: "preshared-key"
-    dpd_timeout_action: clear | none | restart
-    dpd_timeout_seconds: 30
-    enable_tunnel_lifecycle_control: true
-    ike_versions: ["ikev1", "ikev2"]
-    rekey_margin_time_seconds: 300
-    rekey_fuzz_percentage: 100
-    replay_window_size: 1024
-    startup_action: start | add
-    phase1:
-      dh_group_numbers: [2, 14, 15]
-      encryption_algorithms: ["aes128", "aes256"]
-      integrity_algorithms: ["sha1", "sha256"]
-      lifetime_seconds: 28800
-    phase2:
-      dh_group_numbers: [2, 14, 15]
-      encryption_algorithms: ["aes128", "aes256"]
-      integrity_algorithms: ["sha1", "sha256"]
-      lifetime_seconds: 3600
-    log:
-      enabled: true
-      cloudwatch_log_group_name: "vpn-logs" # Optional if not specified it creates new log group
-      output_format: "json"
-      retention_in_days: 30
-```
+### Terragrunt: VPN with Virtual Private Gateway
 
-## Quick Start
-
-1. Ensure you have the following prerequisites:
-   - AWS credentials configured
-   - Terraform (>= 0.13)
-   - Terragrunt installed
-
-2. Create a new Terragrunt project directory:
-   ```bash
-   mkdir vpn-project
-   cd vpn-project
-   ```
-
-3. Create a terragrunt.hcl file with the module configuration:
-   ```hcl
-   include "root" {
-     path = find_in_parent_folders()
-   }
-
-   terraform {
-     source = "git::https://github.com/cloudopsworks/terraform-module-aws-vpn-site-to-site.git?ref=v1.0.0"
-   }
-
-   inputs = {
-     customer_gateway_ip = "YOUR_ON_PREMISES_IP"
-     vpn_connection_type = "ipsec.1"
-     static_routes_only  = true
-     static_routes       = ["10.0.0.0/16"]
-   }
-   ```
-
-4. Initialize and apply the configuration:
-   ```bash
-   terragrunt init
-   terragrunt plan
-   terragrunt apply
-   ```
-
-5. After successful application, retrieve the VPN configuration for your on-premises device using the output values.
-
-
-## Examples
-
-### Basic VPN Connection with Transit Gateway
 ```hcl
-include "root" {
-  path = find_in_parent_folders()
-}
-
 terraform {
-  source = "git::https://github.com/cloudopsworks/terraform-module-aws-vpn-site-to-site.git?ref=v1.0.0"
+  source = "git::https://github.com/cloudopsworks/terraform-module-aws-vpn-site-to-site.git?ref=v1.1.0"
 }
 
 inputs = {
-  customer_gateway_ip   = "203.0.113.1"
-  vpn_connection_type  = "ipsec.1"
-  transit_gateway_id   = dependency.transit_gateway.outputs.transit_gateway_id
-  static_routes_only   = true
-  static_routes        = ["192.168.0.0/24"]
-  tags = {
-    Environment = "production"
+  org = {
+    organization_name = "acme"
+    organization_unit = "it"
+    environment_type  = "dev"
+    environment_name  = "us-east-1"
+  }
+
+  vpc = {
+    vpc_id          = "vpc-88776655"
+    route_table_ids = ["rtb-aabbcc"]
+  }
+
+  settings = {
+    vpn_gateway = {
+      enabled     = true
+      propagation = { enabled = true }
+    }
+    customer_gateway = {
+      ip_address = "5.6.7.8"
+    }
+    static_routes_only = true
+    routes = [
+      { destination_cidr_block = "10.20.0.0/16" }
+    ]
   }
 }
 ```
@@ -258,6 +259,9 @@ Available targets:
   help                                Help screen
   help/all                            Display help for all targets
   help/short                          This help short screen
+  init/aws                            Initialize the project for a specific cloud provider: AWS
+  init/azurerm                        Initialize the project for a specific cloud provider: Azure RM
+  init/gcp                            Initialize the project for a specific cloud provider: GCP
   lint                                Lint terraform/opentofu code
   tag                                 Tag the current version
 
@@ -305,13 +309,13 @@ Available targets:
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_extra_tags"></a> [extra\_tags](#input\_extra\_tags) | n/a | `map(string)` | `{}` | no |
-| <a name="input_is_hub"></a> [is\_hub](#input\_is\_hub) | Establish this is a HUB or spoke configuration | `bool` | `false` | no |
+| <a name="input_extra_tags"></a> [extra\_tags](#input\_extra\_tags) | extra\_tags: {} # (Optional) Extra tags to add to all resources, default is {} | `map(string)` | `{}` | no |
+| <a name="input_is_hub"></a> [is\_hub](#input\_is\_hub) | is\_hub: false # (Optional) Establish this is a HUB or spoke configuration, default is false | `bool` | `false` | no |
 | <a name="input_name"></a> [name](#input\_name) | The name of the VPN | `string` | `""` | no |
 | <a name="input_name_prefix"></a> [name\_prefix](#input\_name\_prefix) | The prefix to use for the VPN name | `string` | `""` | no |
-| <a name="input_org"></a> [org](#input\_org) | n/a | <pre>object({<br/>    organization_name = string<br/>    organization_unit = string<br/>    environment_type  = string<br/>    environment_name  = string<br/>  })</pre> | n/a | yes |
+| <a name="input_org"></a> [org](#input\_org) | org: # (Required) Organization information organization\_name: "my-org" # (Required) Organization name organization\_unit: "my-ou" # (Required) Organization unit environment\_type: "prod" # (Required) Environment type environment\_name: "production" # (Required) Environment name | <pre>object({<br/>    organization_name = string<br/>    organization_unit = string<br/>    environment_type  = string<br/>    environment_name  = string<br/>  })</pre> | n/a | yes |
 | <a name="input_settings"></a> [settings](#input\_settings) | The settings for the VPN | `any` | `{}` | no |
-| <a name="input_spoke_def"></a> [spoke\_def](#input\_spoke\_def) | n/a | `string` | `"001"` | no |
+| <a name="input_spoke_def"></a> [spoke\_def](#input\_spoke\_def) | spoke\_def: "001" # (Optional) Spoke definition, default is "001" | `string` | `"001"` | no |
 | <a name="input_vpc"></a> [vpc](#input\_vpc) | The VPC ID to deploy the VPN into | `any` | `{}` | no |
 
 ## Outputs
@@ -367,7 +371,7 @@ Please use the [issue tracker](https://github.com/cloudopsworks/terraform-module
 
 ## Copyrights
 
-Copyright © 2024-2025 [Cloud Ops Works LLC](https://cloudops.works)
+Copyright © 2024-2026 [Cloud Ops Works LLC](https://cloudops.works)
 
 
 
