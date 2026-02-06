@@ -46,8 +46,8 @@ resource "aws_vpn_gateway_attachment" "this" {
 }
 
 resource "aws_vpn_gateway_route_propagation" "this" {
-  count          = try(var.settings.vpn_gateway.propagation.enabled, false) ? 1 : 0
-  route_table_id = var.vpc.route_table_ids[0]
+  count          = try(var.settings.vpn_gateway.propagation.enabled, false) ? length(var.vpc.route_table_ids) : 0
+  route_table_id = var.vpc.route_table_ids[count.index]
   vpn_gateway_id = length(aws_vpn_gateway.this) > 0 ? aws_vpn_gateway.this[0].id : try(var.settings.vpn_gateway.id, null)
 }
 
@@ -165,7 +165,7 @@ resource "aws_ec2_tag" "this_tgw" {
 
 module "tgw_routes" {
   count                          = try(var.settings.transit_gateway_id, "") != "" ? 1 : 0
-  source                         = "git::https://github.com/cloudopsworks/terraform-module-aws-transit-gateway-routes.git//?ref=v1.0.2"
+  source                         = "git::https://github.com/cloudopsworks/terraform-module-aws-transit-gateway-routes.git//?ref=v1.1.1"
   org                            = var.org
   spoke_def                      = var.spoke_def
   vpc_route_table_ids            = try(var.vpc.route_table_ids, [])

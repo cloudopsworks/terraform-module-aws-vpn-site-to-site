@@ -41,13 +41,13 @@
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_extra_tags"></a> [extra\_tags](#input\_extra\_tags) | n/a | `map(string)` | `{}` | no |
-| <a name="input_is_hub"></a> [is\_hub](#input\_is\_hub) | Establish this is a HUB or spoke configuration | `bool` | `false` | no |
+| <a name="input_extra_tags"></a> [extra\_tags](#input\_extra\_tags) | extra\_tags: {} # (Optional) Extra tags to add to all resources, default is {} | `map(string)` | `{}` | no |
+| <a name="input_is_hub"></a> [is\_hub](#input\_is\_hub) | is\_hub: false # (Optional) Establish this is a HUB or spoke configuration, default is false | `bool` | `false` | no |
 | <a name="input_name"></a> [name](#input\_name) | The name of the VPN | `string` | `""` | no |
 | <a name="input_name_prefix"></a> [name\_prefix](#input\_name\_prefix) | The prefix to use for the VPN name | `string` | `""` | no |
-| <a name="input_org"></a> [org](#input\_org) | n/a | <pre>object({<br/>    organization_name = string<br/>    organization_unit = string<br/>    environment_type  = string<br/>    environment_name  = string<br/>  })</pre> | n/a | yes |
+| <a name="input_org"></a> [org](#input\_org) | org: # (Required) Organization information organization\_name: "my-org" # (Required) Organization name organization\_unit: "my-ou" # (Required) Organization unit environment\_type: "prod" # (Required) Environment type environment\_name: "production" # (Required) Environment name | <pre>object({<br/>    organization_name = string<br/>    organization_unit = string<br/>    environment_type  = string<br/>    environment_name  = string<br/>  })</pre> | n/a | yes |
 | <a name="input_settings"></a> [settings](#input\_settings) | The settings for the VPN | `any` | `{}` | no |
-| <a name="input_spoke_def"></a> [spoke\_def](#input\_spoke\_def) | n/a | `string` | `"001"` | no |
+| <a name="input_spoke_def"></a> [spoke\_def](#input\_spoke\_def) | spoke\_def: "001" # (Optional) Spoke definition, default is "001" | `string` | `"001"` | no |
 | <a name="input_vpc"></a> [vpc](#input\_vpc) | The VPC ID to deploy the VPN into | `any` | `{}` | no |
 
 ## Outputs
