@@ -3,20 +3,20 @@
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 5.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.4 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.82.2 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.4 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_tags"></a> [tags](#module\_tags) | cloudopsworks/tags/local | 1.0.9 |
-| <a name="module_tgw_routes"></a> [tgw\_routes](#module\_tgw\_routes) | git::https://github.com/cloudopsworks/terraform-module-aws-transit-gateway-routes.git// | v1.0.2 |
+| <a name="module_tgw_routes"></a> [tgw\_routes](#module\_tgw\_routes) | git::https://github.com/cloudopsworks/terraform-module-aws-transit-gateway-routes.git// | v1.1.2 |
 
 ## Resources
 
